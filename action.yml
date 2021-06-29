@@ -1,0 +1,27 @@
+name: NotifyBot
+description: "Submit webhook with job status"
+author: "germesdev"
+inputs:
+  endpoint:
+    description: "An endpoint for webhook"
+    required: true
+  step:
+    description: "A step name"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - id: webhook
+      run: |
+        ENDPOINT="${{ inputs.endpoint }}"
+        STATUS="${{ job.status }}"
+        STEP="${{ inputs.step }}"
+        MSG=$(git log --format=%s -n 1 ${{ github.event.after }})
+
+        curl -so /dev/null -w '%{response_code}' -X POST -H "Content-Type: application/json" --data "{ \"commit\": \"https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA/checks\", \"repository\": \"$GITHUB_REPOSITORY\", \"status\": \"$STATUS\", \"actor\": \"$GITHUB_ACTOR\", \"step\": \"$STEP\", \"branch\": \"$GITHUB_REF\", \"msg\": \"$MSG\" }" $ENDPOINT
+      shell: bash
+
+branding:
+  icon: "send"
+  color: "gray-dark"
